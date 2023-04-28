@@ -6,10 +6,12 @@ import Split from "react-split"
 import {nanoid} from "nanoid"
 
 export default function App() {
-    const [notes, setNotes] = React.useState([])
-    const [currentNoteId, setCurrentNoteId] = React.useState(
-        (notes[0] && notes[0].id) || ""
-    )
+    const [notes, setNotes] = React.useState( () => JSON.parse(localStorage.getItem("notes")) || [])
+    const [currentNoteId, setCurrentNoteId] = React.useState((notes[0] && notes[0].id) || "")
+
+    React.useEffect(() => {
+        localStorage.setItem("notes", JSON.stringify(notes))
+    }, [notes])
     
     function createNewNote() {
         const newNote = {
@@ -21,13 +23,28 @@ export default function App() {
     }
     
     function updateNote(text) {
-        setNotes(oldNotes => oldNotes.map(oldNote => {
-            return oldNote.id === currentNoteId
-                ? { ...oldNote, body: text }
-                : oldNote
-        }))
+        setNotes(oldNotes => {
+            let newNotes = [];
+
+            for(let i = 0; i < oldNotes.length; i++){
+                if(oldNotes[i].id === currentNoteId){
+                    newNotes.unshift({ ...oldNotes[i], body: text });
+                }
+                else{
+                    newNotes.push(oldNotes[i]);
+                }
+            }
+
+            return newNotes;
+        })
     }
-    
+
+    function deleteNote(event, noteId) {
+        event.stopPropagation()
+        // Your code here
+        setNotes(oldNotes => oldNotes.filter(oldNote => oldNote.id !== noteId));
+    }
+
     function findCurrentNote() {
         return notes.find(note => {
             return note.id === currentNoteId
@@ -48,6 +65,7 @@ export default function App() {
                     notes={notes}
                     currentNote={findCurrentNote()}
                     setCurrentNoteId={setCurrentNoteId}
+                    deleteNote={deleteNote}
                     newNote={createNewNote}
                 />
                 {
